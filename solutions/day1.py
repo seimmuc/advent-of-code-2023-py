@@ -39,5 +39,5 @@ class Day1(Day):
 
 if __name__ == '__main__':
     from main import run_puzzle
-    run_puzzle(day=1, part=1, s_class=Day1)
-    run_puzzle(day=1, part=2, s_class=Day1)
+    run_puzzle(day=1, part=1, s_class=Day1, path_prefix='..')
+    run_puzzle(day=1, part=2, s_class=Day1, path_prefix='..')

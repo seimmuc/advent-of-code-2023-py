@@ -36,7 +36,7 @@ def generate_new_day(args: list[str]):
 
 def run_puzzle(day: int, part: Literal[1, 2], version: str = None, s_module: str | ModuleType = None,
                s_class: str | Type[Day] = None, s_inst_kwargs: Dict = None, s_instance: Day = None,
-               input_file: str = None):
+               input_file: str = None, path_prefix: str = ''):
     if part not in (1, 2):
         raise ValueError(f'Invalid part: {part}')
     if s_instance is None:
@@ -59,7 +59,7 @@ def run_puzzle(day: int, part: Literal[1, 2], version: str = None, s_module: str
         input_file = f'd{day}.txt'
     else:
         print(f'using alternative input file "{input_file}"')
-    in_path = Path(dir_names['inputs'], input_file)
+    in_path = Path(path_prefix, dir_names['inputs'], input_file)
     if not in_path.is_file():
         print(f'Error: no input file found at "{in_path}"')
         return

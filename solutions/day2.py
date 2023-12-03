@@ -61,5 +61,5 @@ class Day2(Day):
 
 if __name__ == '__main__':
     from main import run_puzzle
-    run_puzzle(day=2, part=1, s_class=Day2)
-    run_puzzle(day=2, part=2, s_class=Day2)
+    run_puzzle(day=2, part=1, s_class=Day2, path_prefix='..')
+    run_puzzle(day=2, part=2, s_class=Day2, path_prefix='..')

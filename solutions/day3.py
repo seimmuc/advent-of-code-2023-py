@@ -113,5 +113,5 @@ class Day3(Day):
 
 if __name__ == '__main__':
     from main import run_puzzle
-    run_puzzle(day=3, part=1, s_class=Day3)
-    run_puzzle(day=3, part=2, s_class=Day3)
+    run_puzzle(day=3, part=1, s_class=Day3, path_prefix='..')
+    run_puzzle(day=3, part=2, s_class=Day3, path_prefix='..')
