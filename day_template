@@ -1,0 +1,15 @@
+from common import Day
+
+
+class Day{{day_num}}(Day):
+    def solve_part1(self, input_str: str) -> str:
+        return None
+
+    def solve_part2(self, input_str: str) -> str:
+        return None
+
+
+if __name__ == '__main__':
+    from main import run_puzzle
+    run_puzzle(day={{day_num}}, part=1, s_class=Day{{day_num}}, input_file='example_input.txt')
+    run_puzzle(day={{day_num}}, part=2, s_class=Day{{day_num}}, input_file='example_input.txt')

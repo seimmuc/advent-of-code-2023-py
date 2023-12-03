@@ -1,3 +1,4 @@
+import sys
 from importlib import import_module
 from pathlib import Path
 from types import ModuleType, NoneType
@@ -7,6 +8,30 @@ from common import Day
 
 
 dir_names = {'inputs': 'inputs', 'solutions': 'solutions'}
+
+
+def generate_new_day(args: list[str]):
+    if len(args) < 1:
+        print('Error: must specify day number')
+        return
+    try:
+        day_num = int(args[0])
+    except ValueError:
+        print(f'Error: day number must be an integer ({args[0]})')
+        return
+    py_path = Path(dir_names['solutions'], f'day{day_num}.py')
+    in_path = Path(dir_names['inputs'], f'd{day_num}.txt')
+    tm_path = Path('day_template')
+    if py_path.exists():
+        print(f'Error: {py_path} already exists!')
+        return
+    with tm_path.open(mode='rt', encoding='utf8', newline='\n') as ft,\
+         py_path.open(mode='wt', encoding='utf8', newline='\n') as fp:
+        fp.write(ft.read().replace('{{day_num}}', str(day_num)))
+    if in_path.exists():
+        print(f'Warning: {in_path} already exists, it will not be recreated')
+    else:
+        in_path.touch(exist_ok=True)
 
 
 def run_puzzle(day: int, part: Literal[1, 2], version: str = None, s_module: str | ModuleType = None,
@@ -52,7 +77,34 @@ def run_puzzle(day: int, part: Literal[1, 2], version: str = None, s_module: str
         print(f'Error: solution output is of invalid type: {type(solution_output)}')
 
 
-if __name__ == '__main__':
-    example_input = True
+def run(args: list[str]):
+    day = 1
+    part: Literal[1, 2] = 1
+    example_input = False
+    for arg in args:
+        arg = arg.lower()
+        if arg.startswith('d'):
+            day = int(arg[1:])
+        elif arg.startswith('p'):
+            # noinspection PyTypeChecker
+            part = int(arg[1:])
+            if part not in (1, 2):
+                print(f'Error: part must equal 1 or 2 ({part})')
+                return
+        elif arg == 'e':
+            example_input = True
     in_file = 'example_input.txt' if example_input else None
-    run_puzzle(day=1, part=1, input_file=in_file)
+    run_puzzle(day=day, part=part, input_file=in_file)
+
+
+if __name__ == '__main__':
+    argv = sys.argv[1:]
+    if len(argv) > 0:
+        if argv[0].lower() == 'new':
+            generate_new_day(argv[1:])
+        elif len(argv) > 0 and argv[0].lower() == 'run':
+            run(argv[1:])
+        else:
+            print(f'Unknown command: {argv[0]}')
+    else:
+        run([])
