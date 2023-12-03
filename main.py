@@ -34,7 +34,11 @@ def run_puzzle(day: int, part: Literal[1, 2], version: str = None, s_module: str
         input_file = f'd{day}.txt'
     else:
         print(f'using alternative input file "{input_file}"')
-    with Path(dir_names['inputs'], input_file).open(mode='rt', encoding='utf8', newline='\n') as f:
+    in_path = Path(dir_names['inputs'], input_file)
+    if not in_path.is_file():
+        print(f'Error: no input file found at "{in_path}"')
+        return
+    with in_path.open(mode='rt', encoding='utf8', newline='\n') as f:
         puzzle_input = f.read()
     print(f'Solving day {day} part {part}', '' if version is None else f' ({version})', sep='')
     # noinspection PyArgumentList
