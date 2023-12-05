@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from enum import Enum
 from io import StringIO
-from typing import Iterator, Union
+from typing import Iterator, Union, Iterable
 
 
 class Day(ABC):
@@ -19,6 +19,25 @@ def line_iterator(multiline_string: str, strip_newline: bool = True) -> Iterator
         if strip_newline:
             line = line.rstrip('\r\n')
         yield line
+
+
+def batch_iterator(iterable: Iterable, n: int, allow_incomplete_batch: bool = True):
+    # python 3.12 has itertools.batched(), but I'm still using 3.10 :(
+    iterable = iter(iterable)
+    batch = []
+    while True:
+        try:
+            batch.append(next(iterable))
+        except StopIteration:
+            if len(batch) < 1:
+                return
+            elif allow_incomplete_batch:
+                yield tuple(batch)
+                return
+            raise
+        if len(batch) == n:
+            yield tuple(batch)
+            batch.clear()
 
 
 # 2D grids
