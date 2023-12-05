@@ -1,4 +1,5 @@
 import sys
+import time
 from importlib import import_module
 from pathlib import Path
 from types import ModuleType, NoneType
@@ -66,10 +67,12 @@ def run_puzzle(day: int, part: Literal[1, 2], version: str = None, s_module: str
     with in_path.open(mode='rt', encoding='utf8', newline='\n') as f:
         puzzle_input = f.read()
     print(f'Solving day {day} part {part}', '' if version is None else f' ({version})', sep='')
+    start_time = time.time()
     # noinspection PyArgumentList
     solution_output = solve_method(input_str=puzzle_input)
+    elapsed_time = time.time() - start_time
     if isinstance(solution_output, str):
-        print('Done, printing solution')
+        print(f'Done in {elapsed_time:.3f}s, printing answer')
         print('=======================')
         print(solution_output)
         print('=======================')
