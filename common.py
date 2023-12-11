@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from enum import Enum
 from io import StringIO
-from typing import Iterator, Union, Iterable
+from typing import Iterator, Union, Iterable, Generic, TypeVar, Sequence, Tuple
 
 
 class Day(ABC):
@@ -51,14 +51,28 @@ class Direction(Enum):
     UpRight = (1, -1)
     DownLeft = (-1, 1)
     DownRight = (1, 1)
+    
+    @property
+    def inverse(self) -> 'Direction':
+        return DIRECTIONS_INVERSES.get(self)
 
 
-DIRECTIONS_ALL = [
+DIRECTIONS_ALL = (
     Direction.Up, Direction.UpRight, Direction.Right, Direction.DownRight, Direction.Down, Direction.DownLeft,
     Direction.Left, Direction.UpLeft
-]
-DIRECTIONS_CARDINAL = [Direction.Up, Direction.Down, Direction.Left, Direction.Right]
-DIRECTIONS_ORDINAL = [Direction.UpLeft, Direction.UpRight, Direction.DownLeft, Direction.DownRight]
+)
+DIRECTIONS_CARDINAL = (Direction.Up, Direction.Down, Direction.Left, Direction.Right)
+DIRECTIONS_ORDINAL = (Direction.UpLeft, Direction.UpRight, Direction.DownLeft, Direction.DownRight)
+DIRECTIONS_INVERSES: dict[Direction, Direction] = {d: next(di for di in DIRECTIONS_ALL
+                                                           if di.value[0] == 0 - d.value[0]
+                                                           and di.value[1] == 0 - d.value[1])
+                                                   for d in DIRECTIONS_ALL}
+DIRECTION_TURN_CARDINAL = {
+    Direction.Up: {'right': Direction.Right, 'left': Direction.Left, 'around': Direction.Down},
+    Direction.Right: {'right': Direction.Down, 'left': Direction.Up, 'around': Direction.Left},
+    Direction.Down: {'right': Direction.Left, 'left': Direction.Right, 'around': Direction.Up},
+    Direction.Left: {'right': Direction.Up, 'left': Direction.Down, 'around': Direction.Right}
+}
 
 
 class Vector:
@@ -90,7 +104,52 @@ class Vector:
         return f'Vector({self.x}, {self.y})'
 
     def __eq__(self, other: 'Vector'):
-        return self.x == other.x and self.y == other.y
+        return other is not None and self.x == other.x and self.y == other.y
 
     def __hash__(self):
         return hash((self.x, self.y))
+
+
+GT = TypeVar('GT')
+
+
+class Grid(Generic[GT]):
+    def __init__(self):
+        self.lines: list[Sequence[GT]] = []
+        self._width: int = 0
+
+    @property
+    def height(self):
+        return len(self.lines)
+
+    @property
+    def width(self):
+        return self._width
+
+    def add_line(self, line: Sequence[GT]):
+        if len(self.lines) < 1:
+            self._width = len(line)
+        elif len(line) != self._width:
+            raise RuntimeError(f'cannot add line to grid: width mismatch ({len(line)} != {self._width})')
+        # noinspection PyTypeChecker
+        self.lines.append(line)
+
+    def is_in_bounds(self, pos: Vector) -> bool:
+        return 0 <= pos.x < self._width and 0 <= pos.y < len(self.lines)
+
+    def get_cell(self, pos: Vector) -> GT:
+        if not self.is_in_bounds(pos):
+            raise RuntimeError(f"pos {pos} is out of grid's bounds")
+        return self.lines[pos.y][pos.x]
+
+    def look_around(self, pos: Vector, directions: Iterator[Direction] = DIRECTIONS_ALL) -> Iterator[Tuple[Vector, GT]]:
+        for d in directions:
+            v = pos + d
+            if self.is_in_bounds(v):
+                yield v, self.get_cell(v)
+
+    def full_scan(self) -> Iterator[Tuple[Vector, GT]]:
+        for y in range(self.height):
+            for x in range(self.width):
+                v = Vector(x, y)
+                yield v, self.get_cell(v)
