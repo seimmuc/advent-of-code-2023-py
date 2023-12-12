@@ -88,6 +88,10 @@ class Vector:
 
     def move_in(self, direction: Direction, dist: int = 1):
         return self + Vector(direction.value[0] * dist, direction.value[1] * dist)
+    
+    @property
+    def manhattan_distance(self) -> int:
+        return abs(self.x) + abs(self.y)
 
     def __add__(self, other: Union['Vector', Direction]) -> 'Vector':
         if isinstance(other, Direction):
@@ -148,7 +152,17 @@ class Grid(Generic[GT]):
             if self.is_in_bounds(v):
                 yield v, self.get_cell(v)
 
-    def full_scan(self) -> Iterator[Tuple[Vector, GT]]:
+    def scan_row(self, y: int) -> Iterator[Tuple[Vector, GT]]:
+        for x in range(self.width):
+            v = Vector(x, y)
+            yield v, self.get_cell(v)
+
+    def scan_column(self, x: int) -> Iterator[Tuple[Vector, GT]]:
+        for y in range(self.height):
+            v = Vector(x, y)
+            yield v, self.get_cell(v)
+
+    def scan_all(self) -> Iterator[Tuple[Vector, GT]]:
         for y in range(self.height):
             for x in range(self.width):
                 v = Vector(x, y)
