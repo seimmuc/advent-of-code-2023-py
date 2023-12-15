@@ -146,6 +146,11 @@ class Grid(Generic[GT]):
             raise RuntimeError(f"pos {pos} is out of grid's bounds")
         return self.lines[pos.y][pos.x]
 
+    def set_cell(self, pos: Vector, val: GT):
+        if not self.is_in_bounds(pos):
+            raise RuntimeError(f"pos {pos} is out of grid's bounds")
+        self.lines[pos.y][pos.x] = val
+
     def look_around(self, pos: Vector, directions: Iterator[Direction] = DIRECTIONS_ALL) -> Iterator[Tuple[Vector, GT]]:
         for d in directions:
             v = pos + d
