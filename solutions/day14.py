@@ -1,7 +1,7 @@
-from common import Day, Grid, Vector, line_iterator, Direction
+from common import Day, LGrid, Vector, line_iterator, Direction
 
 
-class RockPlatform(Grid[str]):
+class RockPlatform(LGrid[str]):
     def calc_load_north(self) -> int:
         load, h = 0, self.height
         for p, v in self.scan_all():

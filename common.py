@@ -146,11 +146,6 @@ class Grid(Generic[GT]):
             raise RuntimeError(f"pos {pos} is out of grid's bounds")
         return self.lines[pos.y][pos.x]
 
-    def set_cell(self, pos: Vector, val: GT):
-        if not self.is_in_bounds(pos):
-            raise RuntimeError(f"pos {pos} is out of grid's bounds")
-        self.lines[pos.y][pos.x] = val
-
     def look_around(self, pos: Vector, directions: Iterator[Direction] = DIRECTIONS_ALL) -> Iterator[Tuple[Vector, GT]]:
         for d in directions:
             v = pos + d
@@ -172,3 +167,38 @@ class Grid(Generic[GT]):
             for x in range(self.width):
                 v = Vector(x, y)
                 yield v, self.get_cell(v)
+
+
+class LGrid(Grid[GT]):
+    def __init__(self):
+        super().__init__()
+        # noinspection PyStatementEffect
+        self.lines  # type: list[list[GT]]
+
+    def add_line(self, line: list[GT]):
+        if not callable(getattr(line, '__setitem__', None)):
+            raise RuntimeError('line must be a list or define a __setitem__() method')
+        return super().add_line(line)
+
+    def set_cell(self, pos: Vector, val: GT):
+        # Only works if lines are lists or other sequences that allow settings values
+        if not self.is_in_bounds(pos):
+            raise RuntimeError(f"pos {pos} is out of grid's bounds")
+        # noinspection PyUnresolvedReferences
+        self.lines[pos.y][pos.x] = val
+
+    def insert_row(self, y: int, row: list[GT]):
+        if not 0 <= y <= self.height:
+            raise RuntimeError(f'cannot insert row: out of bounds (y={y})')
+        if len(row) != self.width:
+            raise RuntimeError(f'cannot insert row: width mismatch ({len(row)} != {self.width})')
+        self.lines.insert(y, row)
+
+    def insert_column(self, x: int, column: list[GT]):
+        if not 0 <= x <= self.width:
+            raise RuntimeError(f'cannot insert column: out of bounds (x={x})')
+        if len(column) != self.height:
+            raise RuntimeError(f'cannot insert column: height mismatch ({len(column)} != {self.height})')
+        for i, row in enumerate(self.lines):  # type: int, list[GT]
+            row.insert(x, column[i])
+        self._width += 1
