@@ -56,6 +56,18 @@ class Direction(Enum):
     def inverse(self) -> 'Direction':
         return DIRECTIONS_INVERSES.get(self)
 
+    @property
+    def only_vertical(self) -> bool:
+        return self.value[0] == 0
+
+    @property
+    def only_horizontal(self) -> bool:
+        return self.value[1] == 0
+
+    @property
+    def is_cardinal(self) -> bool:
+        return self.only_vertical or self.only_horizontal
+
 
 DIRECTIONS_ALL = (
     Direction.Up, Direction.UpRight, Direction.Right, Direction.DownRight, Direction.Down, Direction.DownLeft,

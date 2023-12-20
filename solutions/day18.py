@@ -1,11 +1,15 @@
 import re
-from typing import NamedTuple, Iterator
+from typing import NamedTuple, Iterator, Callable, Literal
 
 from common import Day, Direction, line_iterator, LGrid, Vector, DIRECTION_TURN_CARDINAL, Grid, DIRECTIONS_CARDINAL
 
 
-DIR_MAP = {'U': Direction.Up, 'R': Direction.Right, 'D': Direction.Down, 'L': Direction.Left}
-instruction_regex = re.compile(r'([A-Z]) (\d+) \(#[\da-f]{6}\)')
+DIR_MAP = {
+    'U': Direction.Up, 'D': Direction.Down, 'L': Direction.Left, 'R': Direction.Right,
+    '0': Direction.Right, '1': Direction.Down, '2': Direction.Left, '3': Direction.Up
+}
+instruction_d1_regex = re.compile(r'([A-Z]) (\d+) \(#[\da-f]{6}\)')
+instruction_d2_regex = re.compile(r'[A-Z] \d+ \(#([\da-f]{5})([0-3])\)')
 
 
 class DigInstruction(NamedTuple):
@@ -13,21 +17,23 @@ class DigInstruction(NamedTuple):
     distance: int
 
 
-class DigMap(LGrid[bool]):
-    pass
+# class DigMap(LGrid[bool]):
+#     pass
 
 
-class OutOfBoundsError(RuntimeError):
-    pass
+# class OutOfBoundsError(RuntimeError):
+#     pass
 
 
 class Day18(Day):
     @staticmethod
-    def parse_input(input_str: str) -> list[DigInstruction]:
+    def parse_input(input_str: str, regex: re.Pattern, line_parser: Callable[[re.Match], tuple[Direction, int]])\
+            -> list[DigInstruction]:
         instructions = []
         for line in line_iterator(input_str):
-            match = instruction_regex.fullmatch(line.strip())
-            instructions.append(DigInstruction(DIR_MAP[match[1]], int(match[2])))
+            match = regex.fullmatch(line.strip())
+            direction, distance = line_parser(match)
+            instructions.append(DigInstruction(direction, distance))
         return instructions
 
     @staticmethod
@@ -44,71 +50,39 @@ class Day18(Day):
                     v = v.move_in(instr.direction)
                     yield v, instr
 
-    @classmethod
-    def build_trench_map(cls, instructions: list[DigInstruction]) -> tuple[DigMap, Vector, set[Vector]]:
-        min_x, max_x, min_y, max_y = 0, 0, 0, 0
-        for v, _ in cls.iter_instructions(instructions, corners_only=True):
-            min_x = min(min_x, v.x)
-            max_x = max(max_x, v.x)
-            min_y = min(min_y, v.y)
-            max_y = max(max_y, v.y)
-        dig_map = DigMap()
-        for y in range(max_y + 1 - min_y):
-            dig_map.add_line([False for _ in range(max_x + 1 - min_x)])
-        start = Vector(-min_x, -min_y)
-        trench_tiles: set[Vector] = set()
-        for v, instr in cls.iter_instructions(instructions, start):
-            dig_map.set_cell(v, True)
-            trench_tiles.add(v)
-        return dig_map, start, trench_tiles
-
     @staticmethod
-    def iter_area(bounds_grid: Grid, start: Vector, boundaries: set[Vector], ignore: set[Vector],
-                  out_of_bounds_err=True) -> Iterator[Vector]:
-        loose_ends = [start]
-        found = set()
-        while loose_ends:
-            c_pos = loose_ends.pop()
-            if c_pos in boundaries or c_pos in ignore or c_pos in found:
-                continue
-            if not bounds_grid.is_in_bounds(c_pos):
-                if out_of_bounds_err:
-                    raise OutOfBoundsError()
-                continue
-            yield c_pos
-            found.add(c_pos)
-            loose_ends.extend(c_pos + d for d in DIRECTIONS_CARDINAL)
+    def clockwise(v: Vector, d: Direction) -> bool:
+        return (v.x < 0) == (d == Direction.Up) if d.only_vertical else (v.y < 0) == (d == Direction.Right)
+
+    @classmethod
+    def do_math(cls, instructions: list[DigInstruction]) -> int:
+        center = Vector(0, 0)
+        instr_iter = cls.iter_instructions(instructions, corners_only=True)
+        prev_corner, instr = next(instr_iter)
+        area_outer_trench = 1 + instr.distance / 2
+        area_inside = 0
+        for vec, instr in instr_iter:
+            area = (instr.distance * (abs(vec.x) if instr.direction.only_vertical else abs(vec.y))) / 2
+            if cls.clockwise(prev_corner, instr.direction):
+                area_inside += area
+            else:
+                area_inside -= area
+            area_outer_trench += instr.distance / 2
+            prev_corner = vec
+        if prev_corner != center:
+            raise RuntimeError("trench didn't make a loop")
+        total_area = area_outer_trench + abs(area_inside)
+        if total_area % 1 != 0:
+            raise RuntimeError(f'total_area , which is not an integer')
+        return int(total_area)
 
     def solve_part1(self, input_str: str) -> str:
-        instructions = self.parse_input(input_str)
-        dig_map, start_loc, trench_tiles = self.build_trench_map(instructions)
-        inside_tiles: set[Vector] | None = None
-        for side in ('right', 'left'):
-            try:
-                its: set[Vector] = set()
-                for trench_vec, instr in self.iter_instructions(instructions, start=start_loc):
-                    t = trench_vec + DIRECTION_TURN_CARDINAL[instr.direction][side]
-                    for v in self.iter_area(dig_map, start=t, boundaries=trench_tiles, ignore=its):
-                        its.add(v)
-                inside_tiles = its
-                break
-            except OutOfBoundsError:
-                continue
-        if inside_tiles is None:
-            raise RuntimeError()
-
-        # print_map: LGrid[str] = LGrid()
-        # for ln in dig_map.lines:
-        #     print_map.add_line(list('#' if t else '.' for t in ln))
-        # print_map.set_cell(start_loc, '@')
-        # for it in inside_tiles:
-        #     print_map.set_cell(it, '!')
-        # for ln in print_map.lines:
-        #     print(''.join(ln))
-        return str(len(inside_tiles) + len(trench_tiles))
+        instructions = self.parse_input(input_str, instruction_d1_regex, lambda m: (DIR_MAP[m[1]], int(m[2])))
+        return str(self.do_math(instructions))
 
     def solve_part2(self, input_str: str) -> str:
-        return None
+        instructions = self.parse_input(input_str, instruction_d2_regex, lambda m: (DIR_MAP[m[2]], int(m[1], 16)))
+        return str(self.do_math(instructions))
 
 
 if __name__ == '__main__':
